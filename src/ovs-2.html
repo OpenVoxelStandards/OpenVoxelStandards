@@ -30,5 +30,133 @@
   </tr>
   </tbody>
 </table>
+<p>The Open Voxel Standards Stratum File Format (OVS SFF) encodes voxel composition using the following sections:</p>
+<ol>
+  <li>header</li>
+  <li>material
+    <ol>
+      <li>strata</li>
+      <li>segments</li>
+      <li>voxels</li>
+    </ol>
+  </li>
+  <li>supplemental data
+    <ol>
+      <li>strata</li>
+      <li>segments</li>
+      <li>voxels</li>
+    </ol>
+  </li>
+  <li>footer</li>
+</ol>
+<p>Voxel composition consists of a material and optional supplemental data.</p>
+<h2>Header Section</h2>
+<p>The header section consists of:</p>
+<ol>
+  <li>the <abbr title="Open Voxel Standards Stratum File Format">OVS SFF</abbr> magic number;</li>
+  <li>
+    the <abbr title="Open Voxel Standards Stratum File Format">OVS SFF</abbr> version according to which the file is
+    encoded;
+  </li>
+  <li>the dimensions of the domain described by the file;</li>
+  <li>the number of stratum, segment, and voxel entries in their respective subsections of the material and supplemental
+    data sections; and
+  </li>
+  <li>the default material and supplemental data.</li>
+</ol>
+<h2>Material and Supplemental Data Sections</h2>
+<p>
+  In the material section <tt>composition = material</tt>, while in the supplemental data section <tt>composition =
+  supplemental-data</tt>.
+  To avoid needing to specify the composition of all voxels, a default material and a default supplemental data shall be
+  used for those voxel whose respective attributes are not explicitly specified.
+</p>
+<p>
+  The <tt>material</tt> symbol represents a fixed or variable width encoding a voxel material.
+  The exact correspondence between the encoded and decoded material forms is beyond the scope of this standard as it is
+  dependent on the materials defined by the application.
+</p>
+<p>
+  The <tt>supplemental-data</tt> symbol represents a variable length encoding of additional data (i.e., data other than
+  material) regarding the composition of voxels.
+  The format of the supplemental data itself is not specified by the current draft.
+</p>
+<h3>Strata Subsections</h3>
+<p>Strata subsections shall begin by specifying the format used via an big endian, unsigned, two-bit integer value.
+  The options are:</p>
+<ol start="0">
+  <li>range strata format (<tt>strata = range-strata</tt>),</li>
+  <li>continuum strata format (<tt>strata = continuum-strata</tt>), and</li>
+  <li>implicit level strata format (<tt>strata = implicit-level-strata</tt>).</li>
+</ol>
+<p>
+  In the range strata format, each strata specification consists of a z-range followed by the composition data of the
+  section.
+</p>
+<pre>range-strata = { range-stratum } ;</pre>
+<pre>range-stratum = z-range, composition ;</pre>
+<p>The value of <tt>z-stop</tt> shall always be greater than or equal to that of <tt>z-start</tt>.</p>
+<pre>z-range = z-start, z-stop ;</pre>
+<p>
+  The z-ranges of different strata may overlap&mdash;with the composition of succeeding strata taking precedence over
+  that of preceding strata&mdash;subject to the following rules and restrictions:
+</p>
+<ul>
+  <li>
+    For any two overlapping strata, the z-range of one stratum must be fully enclosed by the z-range of the other
+    stratum, respectively, the enclosed stratum, included stratum, or inclusion and the enclosing stratum.
+  </li>
+  <li>
+    Strata shall be ordered by ascending z-value.
+    As a consequence of the preceding requirement, strata cannot have the same z-start or z-stop values and inclusions
+    must succeed the strata enclosing them.
+  </li>
+</ul>
+<p>The composition of succeeding strata shall take precedence over that of preceding strata.</p>
+<p>
+  Since overlapping strata are inconsistent with the continuum and implicit level strata formats, their strata shall
+  simply be ordered by ascending z-level.
+</p>
+<pre>continuum-strata = z-start, { continuum-stratum } ;</pre>
+<pre>continuum-stratum = z-size, composition ;</pre>
+<p>
+  In the implicit level strata format, each strata consists of a single voxel high layer and the composition of each
+  layer is explicitly specified (i.e., no layers are skipped).
+  As a result, the z-values of those levels need not be specified explicitly.
+</p>
+<pre>implicit-level-strata = { implicit-level-stratum } ;</pre>
+<pre>implicit-level-stratum = { composition } ;</pre>
+<h3>Segments Subsections</h3>
+<pre>segments = { segment } ;</pre>
+<pre>segment = xyz-range, composition ;</pre>
+<pre>xyz-range = xyz-start, xyz-stop ;</pre>
+<pre>xyz-start = x-start, y-start, z-start<br>xyz-stop = x-stop, y-stop, z-stop ;</pre>
+<h3>Voxels Subsections</h3>
+<pre>voxels = { voxel } ;</pre>
+<pre>voxel = xyz, composition ;</pre>
+<pre>xyz = x, y, z ;</pre>
+<h2>Footer Section</h2>
+<h2>Mathematical Definition</h2>
+<p>Let <i>S</i> be the set of strata.</p>
+<p>
+  <i>&forall; s<sub>i</sub> &isin; S, &exist; z<sub>i,0</sub>, z<sub>i,1</sub> &isin; &integers;</i> s.t.
+  <i>z<sub>i,0</sub> &le; z<sub>i,1</sub></i> where <i>z<sub>i,0</sub></i> and <i>z<sub>i,1</sub></i> are respectively
+  the first and last z-levels of the stratum <i>s<sub>i</sub></i>.
+</p>
+<p><i>&forall; s<sub>0</sub>, s<sub>1</sub> &isin; S</i>:</p>
+<ul>
+  <li>
+    <i>s<sub>0</sub></i> and <i>s<sub>1</sub></i> are disjoint are disjoint <abbr title="if and only if">iff</abbr>
+    <i>r<sub>0,1</sub> &lt; r<sub>1,0</sub> &or; r<sub>1,1</sub> &lt; r<sub>0,0</sub></i>;
+  </li>
+  <li>
+    <i>s<sub>1</sub></i> is an inclusion in <i>s<sub>0</sub></i> iff <i>r<sub>0,0</sub> &lt; r<sub>1,0</sub> &and;
+    r<sub>1,1</sub> &lt; r<sub>0,1</sub></i>; and
+  </li>
+  <li>
+    <i>s<sub>0</sub></i> is an inclusion in <i>s<sub>1</sub></i> iff <i>(r<sub>1,0</sub> &lt; r<sub>0,0</sub> &and;
+    r<sub>0,1</sub> &lt; r<sub>1,1</sub>)</i>.
+  </li>
+</ul>
 </body>
 </html>
